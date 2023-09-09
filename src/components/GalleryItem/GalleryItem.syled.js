@@ -2,8 +2,14 @@ import { styled } from "styled-components";
 
 const StyledPreview = styled.img`
 display: block;
-height: 100%;
-width: 350px;
+width: 100%;
+height: 280px;
+object-fit: cover;
+`
+
+const StyledItem = styled.li`
+width: 360px;
+
 `
 const StyledImage = styled.img`
 display: block;
@@ -12,4 +18,4 @@ padding: 0;
 margin: 0;
 `
 
-export {StyledPreview, StyledImage}
+export {StyledPreview, StyledImage, StyledItem}

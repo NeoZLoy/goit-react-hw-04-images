@@ -1,75 +1,75 @@
-import { Component } from "react";
+import { useState, useEffect } from "react";
 import { Gallery } from "./Gallery/Gallery";
 import { SearchBar } from "./SearchBar/SearchBar";
-import axios from "axios";
 import { Loader } from "./Wrapper.styled";
+import toast, { Toaster } from 'react-hot-toast';
+import getImages from "api";
 
-const KEY = "38314645-d57637d53f9e89632580f05c8"
-axios.defaults.baseURL = `https://pixabay.com/api/`;
 
-export class App extends Component{
-  
-  state = {
-    images: [],
-    query: ' ',
-    page: 0,
-    isLoading: false,
-    noImages: false,
-    totalPages: 1,
-    perPage: 12,
-  }
 
-  onQueryChange = newQuery => 
-    this.setState({query: `${Date.now()}/${newQuery}`, images: [], page: 1});
+export const App = () => {
+  const [images, setImages] = useState([])
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(0)
+  const [isLoading, setIsLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
 
-    async getImages(){
-      const data = await axios.get(`?key=${KEY}&q=${this.state.query.split('/')[1]}&page=${this.state.page}&per_page=12&image_type=photo&orientation=horizontal`)
-      return data;
+  // get images from server
+  useEffect(() => {
+    if(query === ''){
+      return
     }
-
-  async componentDidUpdate(prevProps, prevState){
-
-      if(prevState.query !== this.state.query || prevState.page !== this.state.page){
+    async function fetchImages (){
       try {
-        this.setState({isLoading: true})
-        const res = await this.getImages();
-        
-        const total = Math.ceil(res.data.total / 12);
-        if(res.data.hits.length === 0){
-          this.setState({isLoading: false, noImages: true})
-        } else{
-          this.setState({images: this.state.page > 1 ? [...prevState.images, ...res.data.hits] : res.data.hits, isLoading: false, noImages: false, totalPages: total})
-          if(res.page === this.state.totalPages){
-            console.log("that's all")
-          }
+        setIsLoading(true)
+        const data = await getImages(query, page);
+        setTotalPages(Math.ceil(data.total / 12));
+        if(data.hits.length === 0){
+          toast.error("We cant find images on Your query", {duration: 1500,})
+        }
+        if(page === 1){
+          setImages(data.hits)
+        }
+        if(page > 1){
+          setImages(prevState => [...prevState, ...data.hits])
         }
       } catch (error) {
-        console.log(error)
-      }
-      
+        toast.error(error)
+      } finally{
+        setIsLoading(false)
       }
     }
+    
+    fetchImages()
+  }, [page, query,])
 
-   onLoadMoreClick = async () => {
-    this.setState(prevState => ({page: prevState.page +1}))
+
+  const changeQuery = (newQuery) => {
+    setQuery(`${Date.now()}/${newQuery}`);
+    setImages([]);
+    setPage(1);
   }
 
-  render(){
-    return( 
+  const loadMore = () => {
+    setPage(prevState => prevState + 1)
+  }
+
+  return( 
     <main>
       <section>
         <div>
-          <SearchBar onQueryChange = {this.onQueryChange}/>
+          <SearchBar onQueryChange = {changeQuery}/>
         </div>
-        <div>
-          {this.state.isLoading 
-          ? <Loader  height="100" 
-          width="100" wrapperStyle={{justifyContent: "center", alignItems: "center"}}/> 
-          : <Gallery images = {this.state.images} onLoadMoreClick = {this.onLoadMoreClick} noImages = {this.state.noImages} totalPages = {this.state.totalPages} page = {this.state.page}/>}
+        <div>   
+          {isLoading && 
+            <Loader  height="100" 
+            width="100" wrapperStyle={{justifyContent: "center", alignItems: "center"}}/>
+            }    
+          {images.length > 0 && 
+          <Gallery images = {images} onLoadMoreClick = {loadMore} totalPages = {totalPages} page = {page}/>}
+          
+          <Toaster/>
         </div>
       </section>
     </main>);
-   
-  }
-  
-};
+}

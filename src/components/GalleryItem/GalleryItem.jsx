@@ -1,24 +1,14 @@
 
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from 'react-modal';
 import { disableBodyScroll, enableBodyScroll, } from 'body-scroll-lock';
 import { StyledImage, StyledPreview } from './GalleryItem.syled';
 
 Modal.setAppElement('#root');
 
-export class GalleryItem extends Component{
+let targetElement = null;
 
-    state= {
-        isModalOpen: false,
-    }
-
-    targetElement = null;
-
-    componentDidMount() {
-        this.targetElement = document.querySelector('#root');
-      }
-
-    customStyles = {
+const customStyles = {
     content: {
       top: '50%',
       left: '50%',
@@ -35,38 +25,37 @@ export class GalleryItem extends Component{
         position: 'fixed',
     }
   };
+
+export const GalleryItem = ({image}) => {
+
+    const [isModalOpen, setIsModalOpen] = useState(false)   
     
-    openModal = () => {
-        disableBodyScroll(this.targetElement);
-        this.setState({isModalOpen:true})};
-    
-    closeModal = () => 
-    {
-        enableBodyScroll(this.targetElement);
-        this.setState({isModalOpen:false});
+    const openModal = () => {
+        disableBodyScroll(targetElement)
+        setIsModalOpen(true);
     }
-    
-    
 
-    render(){
-        const {
-            image: {id, largeImageURL, webformatURL}
-        } = this.props;
+    const closeModal = () => {
+        enableBodyScroll(targetElement);
+        setIsModalOpen(false);
+    }
 
-        return(
-            <>
-            <StyledPreview src={webformatURL} alt={id} onClick={this.openModal} />
+    useEffect(() => {
+        targetElement = document.querySelector('#root');
+    })
+
+    return(
+        <>
+            <StyledPreview src={image.webformatURL} alt={image.id} onClick={openModal} />
+
             <Modal
-            isOpen={this.state.isModalOpen}
-            onRequestClose={this.closeModal}
-            style={this.customStyles}
+                isOpen={isModalOpen}
+                onRequestClose={closeModal}
+                style={customStyles}
             >
-                <StyledImage src={largeImageURL} alt={id} />
-                
+                <StyledImage src={image.largeImageURL} alt={image.id} />
             </Modal>
-            </>
-           
-        )
-        
-}
+        </>
+       
+    )
 }
